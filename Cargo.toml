@@ -1,0 +1,12 @@
+[package]
+name = "rustybar"
+version = "0.1.0"
+authors = ["Artemis Tosini <me@artem.ist>"]
+edition = "2018"
+
+
+[dependencies]
+tokio = { version = "0.2", features = ["full"] }
+serde_json = "1.0"
+dbus-tokio = "0.5"
+dbus = "0.8"
