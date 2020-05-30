@@ -32,23 +32,35 @@ impl Default for Markup {
 #[derive(Clone, Serialize, Default, Debug)]
 pub struct Block {
     pub full_text: Box<str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub short_text: Option<Box<str>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub color: Option<Box<str>>,
-    #[serde(rename = "background")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "background")]
     pub background_color: Option<Box<str>>,
-    #[serde(rename = "border")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "border")]
     pub border_color: Option<Box<str>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_top: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_right: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_bottom: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub border_left: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub min_width: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub align: Option<Alignment>,
     pub name: Box<str>,
     pub instance: Box<str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub urgent: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub separator: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub separator_block_width: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub markup: Option<Markup>,
 }
 

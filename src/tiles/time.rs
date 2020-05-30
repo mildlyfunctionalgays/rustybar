@@ -50,7 +50,7 @@ impl Time {
     async fn run(&self) {
         let mut time = Local::now();
         loop {
-            self.send_time(time).await;
+            self.send_time(time).await.unwrap();
             time = Local::now();
             let millis_part = time.naive_local().timestamp_subsec_millis() as u64;
             let delay_ms = 1000u64 - millis_part % 1000; // Don't crash if we hit a leap second
