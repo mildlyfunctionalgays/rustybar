@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 
-#[derive(Copy, Clone, Serialize)]
+#[derive(Copy, Clone, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Alignment {
     Left,
@@ -16,7 +16,7 @@ impl Default for Alignment {
     }
 }
 
-#[derive(Copy, Clone, Serialize)]
+#[derive(Copy, Clone, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Markup {
     None,
@@ -29,33 +29,33 @@ impl Default for Markup {
     }
 }
 
-#[derive(Clone, Serialize, Default)]
+#[derive(Clone, Serialize, Default, Debug)]
 pub struct Block {
-    full_text: Box<str>,
-    short_text: Option<Box<str>>,
-    color: Option<Box<str>>,
+    pub full_text: Box<str>,
+    pub short_text: Option<Box<str>>,
+    pub color: Option<Box<str>>,
     #[serde(rename = "background")]
-    background_color: Option<Box<str>>,
+    pub background_color: Option<Box<str>>,
     #[serde(rename = "border")]
-    border_color: Option<Box<str>>,
-    border_top: Option<u32>,
-    border_right: Option<u32>,
-    border_bottom: Option<u32>,
-    border_left: Option<u32>,
-    min_width: Option<u32>,
-    align: Option<Alignment>,
-    name: Box<str>,
-    instance: Box<str>,
-    urgent: Option<bool>,
-    separator: Option<bool>,
-    separator_block_width: Option<u32>,
-    markup: Option<Markup>,
+    pub border_color: Option<Box<str>>,
+    pub border_top: Option<u32>,
+    pub border_right: Option<u32>,
+    pub border_bottom: Option<u32>,
+    pub border_left: Option<u32>,
+    pub min_width: Option<u32>,
+    pub align: Option<Alignment>,
+    pub name: Box<str>,
+    pub instance: Box<str>,
+    pub urgent: Option<bool>,
+    pub separator: Option<bool>,
+    pub separator_block_width: Option<u32>,
+    pub markup: Option<Markup>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TileData {
-    sender_id: usize,
-    block: Block,
+    pub sender_id: usize,
+    pub block: Block,
 }
 
 pub trait Tile: Send {

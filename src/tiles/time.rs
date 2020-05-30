@@ -1,34 +1,71 @@
 use crate::tile::{Block, Tile, TileData};
+use async_std::sync::RwLock;
+use chrono::prelude::*;
+use chrono::DateTime;
 use std::sync::Arc;
-use tokio::sync::mpsc::Sender;
+use std::time::Duration;
+use tokio::sync::mpsc::{error::SendError, Sender};
 use tokio::task::JoinHandle;
-use tokio::time;
-use uuid::Uuid;
+use tokio::time::delay_for;
 
 pub struct Time {
     sender_id: usize,
-    sender: Sender<TileData>,
+    sender: RwLock<Sender<TileData>>,
     instance: Box<str>,
+    format: Box<str>,
+    short_format: Box<str>,
 }
 
 impl Time {
-    pub fn new(sender_id: usize, sender: Sender<TileData>) -> Time {
-        let instance = Uuid::new_v4().to_string().into_boxed_str();
+    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Box<str>) -> Time {
         Time {
             sender_id,
-            sender,
+            sender: RwLock::new(sender),
             instance,
+            format: "%Y-%m-%d %H:%M:%S".into(),
+            short_format: "%H:%M:%S".into(),
         }
     }
 
-    async fn run(&self) {}
+    async fn send(&self, data: TileData) -> Result<(), SendError<TileData>> {
+        let mut sender = self.sender.write().await;
+        sender.send(data).await
+    }
+
+    async fn send_time(&self, time: DateTime<Local>) -> Result<(), SendError<TileData>> {
+        let block = Block {
+            full_text: time.format(&self.format).to_string().into(),
+            short_text: Some(time.format(&self.short_format).to_string().into()),
+            instance: self.instance.clone(),
+            name: "time".into(),
+            ..Default::default()
+        };
+        let data = TileData {
+            sender_id: self.sender_id,
+            block,
+        };
+        self.send(data).await
+    }
+
+    async fn run(&self) {
+        let mut time = Local::now();
+        loop {
+            self.send_time(time).await;
+            time = Local::now();
+            let millis_part = time.naive_local().timestamp_subsec_millis() as u64;
+            let delay_ms = 1000u64 - millis_part % 1000; // Don't crash if we hit a leap second
+            delay_for(Duration::from_millis(delay_ms)).await;
+        }
+    }
 }
 
 impl Tile for Time {
     fn spawn(self: Arc<Self>) -> JoinHandle<()> {
-        tokio::spawn(async {
+        tokio::spawn(async move {
             let instance = self;
-            instance.run().await
+            loop {
+                instance.run().await
+            }
         })
     }
 }
