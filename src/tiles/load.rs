@@ -30,9 +30,9 @@ impl Load {
 
     async fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut timer = interval(Duration::from_secs(5));
-        let mut raw = String::new();
         loop {
             timer.tick().await;
+            let mut raw = String::new();
             File::open("/proc/loadavg")
                 .await?
                 .read_to_string(&mut raw)
