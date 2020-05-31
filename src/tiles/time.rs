@@ -47,10 +47,10 @@ impl Time {
         self.send(data).await
     }
 
-    async fn run(&self) {
+    async fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut time = Local::now();
         loop {
-            self.send_time(time).await.unwrap();
+            self.send_time(time).await?;
             time = Local::now();
             let millis_part = time.naive_local().timestamp_subsec_millis() as u64;
             let delay_ms = 1000u64 - millis_part % 1000; // Don't crash if we hit a leap second
@@ -60,12 +60,10 @@ impl Time {
 }
 
 impl Tile for Time {
-    fn spawn(self: Arc<Self>) -> JoinHandle<()> {
+    fn spawn(self: Arc<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
         tokio::spawn(async move {
             let instance = self;
-            loop {
-                instance.run().await
-            }
+            instance.run().await
         })
     }
 }

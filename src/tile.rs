@@ -71,5 +71,5 @@ pub struct TileData {
 }
 
 pub trait Tile: Send {
-    fn spawn(self: Arc<Self>) -> JoinHandle<()>;
+    fn spawn(self: Arc<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>;
 }
