@@ -27,8 +27,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             sender.clone(),
             Uuid::new_v4().to_string().into_boxed_str(),
         )),
-        Arc::new(tiles::Time::new(
+        Arc::new(tiles::Hostname::new(
             1,
+            sender.clone(),
+            Uuid::new_v4().to_string().into_boxed_str(),
+        )),
+        Arc::new(tiles::Time::new(
+            2,
             sender,
             Uuid::new_v4().to_string().into_boxed_str(),
         )),
