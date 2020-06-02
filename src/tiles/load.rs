@@ -1,10 +1,10 @@
 use crate::tile::{Block, Tile, TileData};
-use async_std::sync::RwLock;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::sync::mpsc::{error::SendError, Sender};
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::interval;
 

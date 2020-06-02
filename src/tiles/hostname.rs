@@ -1,9 +1,9 @@
 use crate::tile::{Block, Tile, TileData};
-use async_std::sync::RwLock;
 use std::sync::Arc;
 use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::sync::mpsc::{error::SendError, Sender};
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
 pub struct Hostname {
