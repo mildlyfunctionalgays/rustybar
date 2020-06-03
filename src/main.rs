@@ -21,7 +21,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut index = 0usize;
     let mut wrap = |module| {
-        let tile = tile::Tile::new(index, sender.clone(), Uuid::new_v4().to_string().into(), module);
+        let tile = tile::Tile::new(
+            index,
+            sender.clone(),
+            Uuid::new_v4().to_string().into(),
+            module,
+        );
         index += 1;
         tile
     };

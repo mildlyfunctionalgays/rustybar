@@ -37,7 +37,10 @@ impl Default for Time {
 
 #[async_trait]
 impl TileModule for Time {
-    async fn run(&mut self, sender: &mut BlockSender) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn run(
+        &mut self,
+        sender: &mut BlockSender,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut time = Local::now();
         loop {
             sender.send(self.send_time(time)).await?;

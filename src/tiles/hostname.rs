@@ -14,7 +14,10 @@ impl Hostname {
 
 #[async_trait]
 impl TileModule for Hostname {
-    async fn run(&mut self, sender: &mut BlockSender) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn run(
+        &mut self,
+        sender: &mut BlockSender,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut raw = String::new();
         File::open("/proc/sys/kernel/hostname")
             .await?

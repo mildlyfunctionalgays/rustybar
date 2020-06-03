@@ -54,7 +54,10 @@ impl Memory {
 
 #[async_trait]
 impl TileModule for Memory {
-    async fn run(&mut self, sender: &mut BlockSender) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn run(
+        &mut self,
+        sender: &mut BlockSender,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut timer = interval(Duration::from_secs(5));
         let mut raw = [0u8; 256];
         loop {

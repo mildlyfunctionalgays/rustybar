@@ -85,7 +85,10 @@ pub struct TileData {
 
 #[async_trait]
 pub trait TileModule: Send + std::fmt::Debug {
-    async fn run(&mut self, sender: &mut BlockSender) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+    async fn run(
+        &mut self,
+        sender: &mut BlockSender,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[derive(Debug)]
@@ -113,7 +116,12 @@ pub struct Tile {
 }
 
 impl Tile {
-    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>, module: Box<dyn TileModule>) -> Self {
+    pub fn new(
+        sender_id: usize,
+        sender: Sender<TileData>,
+        instance: Arc<str>,
+        module: Box<dyn TileModule>,
+    ) -> Self {
         Tile {
             sender: BlockSender {
                 sender_id,
@@ -124,8 +132,6 @@ impl Tile {
         }
     }
     pub fn spawn(mut self) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
-        tokio::spawn(async move {
-            self.module.run(&mut self.sender).await
-        })
+        tokio::spawn(async move { self.module.run(&mut self.sender).await })
     }
 }
