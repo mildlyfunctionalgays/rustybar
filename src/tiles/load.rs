@@ -11,11 +11,11 @@ use tokio::time::interval;
 pub struct Load {
     sender_id: usize,
     sender: RwLock<Sender<TileData>>,
-    instance: Box<str>,
+    instance: Arc<str>,
 }
 
 impl Load {
-    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Box<str>) -> Load {
+    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>) -> Load {
         Load {
             sender_id,
             sender: RwLock::new(sender),

@@ -9,11 +9,11 @@ use tokio::task::JoinHandle;
 pub struct Hostname {
     sender_id: usize,
     sender: RwLock<Sender<TileData>>,
-    instance: Box<str>,
+    instance: Arc<str>,
 }
 
 impl Hostname {
-    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Box<str>) -> Hostname {
+    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>) -> Hostname {
         Hostname {
             sender_id,
             sender: RwLock::new(sender),

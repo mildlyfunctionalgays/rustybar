@@ -11,13 +11,13 @@ use tokio::time::delay_for;
 pub struct Time {
     sender_id: usize,
     sender: RwLock<Sender<TileData>>,
-    instance: Box<str>,
+    instance: Arc<str>,
     format: Box<str>,
     short_format: Box<str>,
 }
 
 impl Time {
-    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Box<str>) -> Time {
+    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>) -> Time {
         Time {
             sender_id,
             sender: RwLock::new(sender),

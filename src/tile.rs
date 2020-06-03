@@ -1,6 +1,7 @@
-use serde::Serialize;
+use serde::{Serialize, ser::Serializer};
 use std::sync::Arc;
 use tokio::task::JoinHandle;
+use smart_default::SmartDefault;
 
 #[derive(Copy, Clone, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -29,7 +30,11 @@ impl Default for Markup {
     }
 }
 
-#[derive(Clone, Serialize, Default, Debug)]
+fn arc_default<S>(arc: &Arc<str>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    serializer.serialize_str(arc)
+}
+
+#[derive(Clone, Serialize, Debug, SmartDefault)]
 pub struct Block {
     pub full_text: Box<str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -53,7 +58,9 @@ pub struct Block {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub align: Option<Alignment>,
     pub name: Box<str>,
-    pub instance: Box<str>,
+    #[serde(serialize_with = "arc_default")]
+    #[default = r#""".into()"#]
+    pub instance: Arc<str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub urgent: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
