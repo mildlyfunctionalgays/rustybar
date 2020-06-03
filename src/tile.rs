@@ -81,5 +81,5 @@ pub struct TileData {
 }
 
 pub trait Tile: Send + std::fmt::Debug {
-    fn spawn(self: Arc<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>;
+    fn spawn(self: Box<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>;
 }

@@ -3,7 +3,6 @@ pub mod tile;
 pub mod tiles;
 
 use dbus_tokio::connection::new_session_sync;
-use std::sync::Arc;
 use tile::Tile;
 use tokio::sync::mpsc::channel;
 use uuid::Uuid;
@@ -21,33 +20,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (sender, receiver) = channel(1024);
 
-    let tiles: Vec<Arc<dyn Tile>> = vec![
-        Arc::new(tiles::Load::new(
+    let tiles: Vec<Box<dyn Tile>> = vec![
+        Box::new(tiles::Load::new(
             0,
             sender.clone(),
             Uuid::new_v4().to_string().into(),
         )),
-        Arc::new(tiles::Memory::new(
+        Box::new(tiles::Memory::new(
             1,
             sender.clone(),
             Uuid::new_v4().to_string().into(),
         )),
-        Arc::new(tiles::Hostname::new(
+        Box::new(tiles::Hostname::new(
             2,
             sender.clone(),
             Uuid::new_v4().to_string().into(),
         )),
-        Arc::new(tiles::Time::new(
+        Box::new(tiles::Time::new(
             3,
             sender,
             Uuid::new_v4().to_string().into(),
         )),
     ];
 
-    for tile in &tiles {
-        tile.clone().spawn();
+    let num_tiles = tiles.len();
+    for tile in tiles {
+        tile.spawn();
     }
 
-    let num_tiles = tiles.len();
     match output::launch(num_tiles, receiver).await? {}
 }

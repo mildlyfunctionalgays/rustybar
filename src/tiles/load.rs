@@ -4,14 +4,13 @@ use std::time::Duration;
 use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::sync::mpsc::{error::SendError, Sender};
-use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::interval;
 
 #[derive(Debug)]
 pub struct Load {
     sender_id: usize,
-    sender: RwLock<Sender<TileData>>,
+    sender: Sender<TileData>,
     instance: Arc<str>,
 }
 
@@ -19,17 +18,16 @@ impl Load {
     pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>) -> Load {
         Load {
             sender_id,
-            sender: RwLock::new(sender),
+            sender,
             instance,
         }
     }
 
-    async fn send(&self, data: TileData) -> Result<(), SendError<TileData>> {
-        let mut sender = self.sender.write().await;
-        sender.send(data).await
+    async fn send(&mut self, data: TileData) -> Result<(), SendError<TileData>> {
+        self.sender.send(data).await
     }
 
-    async fn run(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn run(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut timer = interval(Duration::from_secs(5));
         loop {
             timer.tick().await;
@@ -55,10 +53,9 @@ impl Load {
 }
 
 impl Tile for Load {
-    fn spawn(self: Arc<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
+    fn spawn(mut self: Box<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
         tokio::spawn(async move {
-            let instance = self;
-            instance.run().await
+            self.run().await
         })
     }
 }
