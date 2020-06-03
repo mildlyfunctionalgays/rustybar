@@ -1,67 +1,50 @@
-use crate::tile::{Block, Tile, TileData};
+use crate::tile::{Block, BlockSender, TileModule};
+use async_trait::async_trait;
 use chrono::prelude::*;
 use chrono::DateTime;
-use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::mpsc::{error::SendError, Sender};
-use tokio::task::JoinHandle;
 use tokio::time::delay_for;
 
 #[derive(Debug)]
 pub struct Time {
-    sender_id: usize,
-    sender: Sender<TileData>,
-    instance: Arc<str>,
     format: Box<str>,
     short_format: Box<str>,
 }
 
 impl Time {
-    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>) -> Time {
+    pub fn new() -> Time {
+        Default::default()
+    }
+
+    fn send_time(&mut self, time: DateTime<Local>) -> Block {
+        Block {
+            full_text: time.format(&self.format).to_string().into(),
+            short_text: Some(time.format(&self.short_format).to_string().into()),
+            name: "time".into(),
+            ..Default::default()
+        }
+    }
+}
+
+impl Default for Time {
+    fn default() -> Self {
         Time {
-            sender_id,
-            sender,
-            instance,
             format: "%Y-%m-%d %H:%M:%S".into(),
             short_format: "%H:%M:%S".into(),
         }
     }
+}
 
-    async fn send(&mut self, data: TileData) -> Result<(), SendError<TileData>> {
-        self.sender.send(data).await
-    }
-
-    async fn send_time(&mut self, time: DateTime<Local>) -> Result<(), SendError<TileData>> {
-        let block = Block {
-            full_text: time.format(&self.format).to_string().into(),
-            short_text: Some(time.format(&self.short_format).to_string().into()),
-            instance: self.instance.clone(),
-            name: "time".into(),
-            ..Default::default()
-        };
-        let data = TileData {
-            sender_id: self.sender_id,
-            block,
-        };
-        self.send(data).await
-    }
-
-    async fn run(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+#[async_trait]
+impl TileModule for Time {
+    async fn run(&mut self, sender: &mut BlockSender) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut time = Local::now();
         loop {
-            self.send_time(time).await?;
+            sender.send(self.send_time(time)).await?;
             time = Local::now();
             let millis_part = time.naive_local().timestamp_subsec_millis() as u64;
             let delay_ms = 1000u64 - millis_part % 1000; // Don't crash if we hit a leap second
             delay_for(Duration::from_millis(delay_ms)).await;
         }
-    }
-}
-
-impl Tile for Time {
-    fn spawn(mut self: Box<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
-        tokio::spawn(async move {
-            self.run().await
-        })
     }
 }

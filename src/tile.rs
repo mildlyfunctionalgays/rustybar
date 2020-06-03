@@ -1,6 +1,9 @@
+use async_trait::async_trait;
 use serde::{ser::Serializer, Serialize};
 use smart_default::SmartDefault;
+use std::fmt::Debug;
 use std::sync::Arc;
+use tokio::sync::mpsc::{error::SendError, Sender};
 use tokio::task::JoinHandle;
 
 #[derive(Copy, Clone, Debug, Serialize)]
@@ -80,6 +83,49 @@ pub struct TileData {
     pub block: Block,
 }
 
-pub trait Tile: Send + std::fmt::Debug {
-    fn spawn(self: Box<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>;
+#[async_trait]
+pub trait TileModule: Send + std::fmt::Debug {
+    async fn run(&mut self, sender: &mut BlockSender) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+}
+
+#[derive(Debug)]
+pub struct BlockSender {
+    sender_id: usize,
+    sender: Sender<TileData>,
+    instance: Arc<str>,
+}
+
+impl BlockSender {
+    pub async fn send(&mut self, mut block: Block) -> Result<(), SendError<TileData>> {
+        block.instance = self.instance.clone();
+        let data = TileData {
+            block,
+            sender_id: self.sender_id,
+        };
+        self.sender.send(data).await
+    }
+}
+
+#[derive(Debug)]
+pub struct Tile {
+    sender: BlockSender,
+    module: Box<dyn TileModule>,
+}
+
+impl Tile {
+    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>, module: Box<dyn TileModule>) -> Self {
+        Tile {
+            sender: BlockSender {
+                sender_id,
+                sender,
+                instance,
+            },
+            module,
+        }
+    }
+    pub fn spawn(mut self) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
+        tokio::spawn(async move {
+            self.module.run(&mut self.sender).await
+        })
+    }
 }

@@ -6,6 +6,7 @@ edition = "2018"
 
 
 [dependencies]
+async-trait = "0.1"
 chrono = "0.4"
 dbus = "0.8"
 dbus-tokio = "0.5"

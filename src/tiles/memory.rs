@@ -1,32 +1,18 @@
-use crate::tile::{Block, Tile, TileData};
+use crate::tile::{Block, BlockSender, TileModule};
+use async_trait::async_trait;
 use std::io;
 use std::str;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::fs::File;
 use tokio::prelude::*;
-use tokio::sync::mpsc::{error::SendError, Sender};
-use tokio::task::JoinHandle;
 use tokio::time::interval;
 
-#[derive(Debug)]
-pub struct Memory {
-    sender_id: usize,
-    sender: Sender<TileData>,
-    instance: Arc<str>,
-}
+#[derive(Debug, Default)]
+pub struct Memory;
 
 impl Memory {
-    pub fn new(sender_id: usize, sender: Sender<TileData>, instance: Arc<str>) -> Memory {
-        Memory {
-            sender_id,
-            sender,
-            instance,
-        }
-    }
-
-    async fn send(&mut self, data: TileData) -> Result<(), SendError<TileData>> {
-        self.sender.send(data).await
+    pub fn new() -> Memory {
+        Memory
     }
 
     fn prettify_kib(kib: u64) -> Box<str> {
@@ -64,8 +50,11 @@ impl Memory {
             .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))?
             .parse()?)
     }
+}
 
-    async fn run(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+#[async_trait]
+impl TileModule for Memory {
+    async fn run(&mut self, sender: &mut BlockSender) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut timer = interval(Duration::from_secs(5));
         let mut raw = [0u8; 256];
         loop {
@@ -94,25 +83,10 @@ impl Memory {
             let block = Block {
                 full_text,
                 short_text: Some(short_text),
-                instance: self.instance.clone(),
                 name: "memory".into(),
                 ..Default::default()
             };
-            let data = TileData {
-                block,
-                sender_id: self.sender_id,
-            };
-            self.send(data).await?;
+            sender.send(block).await?;
         }
-    }
-}
-
-impl Tile for Memory {
-    fn spawn(mut self: Box<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
-        tokio::spawn(async move {
-            let result = self.run().await;
-            eprintln!("Error in Memory: {:?}", result);
-            result
-        })
     }
 }

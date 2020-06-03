@@ -3,7 +3,6 @@ pub mod tile;
 pub mod tiles;
 
 use dbus_tokio::connection::new_session_sync;
-use tile::Tile;
 use tokio::sync::mpsc::channel;
 use uuid::Uuid;
 
@@ -20,31 +19,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (sender, receiver) = channel(1024);
 
-    let tiles: Vec<Box<dyn Tile>> = vec![
-        Box::new(tiles::Load::new(
-            0,
-            sender.clone(),
-            Uuid::new_v4().to_string().into(),
-        )),
-        Box::new(tiles::Memory::new(
-            1,
-            sender.clone(),
-            Uuid::new_v4().to_string().into(),
-        )),
-        Box::new(tiles::Hostname::new(
-            2,
-            sender.clone(),
-            Uuid::new_v4().to_string().into(),
-        )),
-        Box::new(tiles::Time::new(
-            3,
-            sender,
-            Uuid::new_v4().to_string().into(),
-        )),
+    let mut index = 0usize;
+    let mut wrap = |module| {
+        let tile = tile::Tile::new(index, sender.clone(), Uuid::new_v4().to_string().into(), module);
+        index += 1;
+        tile
+    };
+    let tiles = vec![
+        wrap(Box::new(tiles::Load::new())),
+        wrap(Box::new(tiles::Memory::new())),
+        wrap(Box::new(tiles::Hostname::new())),
+        wrap(Box::new(tiles::Time::new())),
     ];
 
     let num_tiles = tiles.len();
-    for tile in tiles {
+    for tile in tiles.into_iter() {
         tile.spawn();
     }
 
