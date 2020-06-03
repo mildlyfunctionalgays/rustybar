@@ -44,7 +44,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let num_tiles = tiles.len();
-    output::launch(num_tiles, receiver).await?;
-
-    Ok(())
+    match output::launch(num_tiles, receiver).await? {}
 }
