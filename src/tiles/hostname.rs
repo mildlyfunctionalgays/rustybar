@@ -6,6 +6,7 @@ use tokio::sync::mpsc::{error::SendError, Sender};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
+#[derive(Debug)]
 pub struct Hostname {
     sender_id: usize,
     sender: RwLock<Sender<TileData>>,

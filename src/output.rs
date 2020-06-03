@@ -1,7 +1,7 @@
 use crate::tile::TileData;
+use std::convert::Infallible;
 use tokio::io::{self, AsyncWriteExt};
 use tokio::sync::mpsc::Receiver;
-use std::convert::Infallible;
 
 pub async fn launch(num_tiles: usize, mut receiver: Receiver<TileData>) -> io::Result<Infallible> {
     let mut stdout = io::stdout();

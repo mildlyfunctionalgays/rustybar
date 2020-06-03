@@ -8,6 +8,7 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::interval;
 
+#[derive(Debug)]
 pub struct Load {
     sender_id: usize,
     sender: RwLock<Sender<TileData>>,

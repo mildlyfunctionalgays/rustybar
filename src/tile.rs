@@ -1,7 +1,7 @@
-use serde::{Serialize, ser::Serializer};
+use serde::{ser::Serializer, Serialize};
+use smart_default::SmartDefault;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
-use smart_default::SmartDefault;
 
 #[derive(Copy, Clone, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -30,7 +30,10 @@ impl Default for Markup {
     }
 }
 
-fn arc_default<S>(arc: &Arc<str>, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+fn arc_default<S>(arc: &Arc<str>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
     serializer.serialize_str(arc)
 }
 
@@ -77,6 +80,6 @@ pub struct TileData {
     pub block: Block,
 }
 
-pub trait Tile: Send {
+pub trait Tile: Send + std::fmt::Debug {
     fn spawn(self: Arc<Self>) -> JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>;
 }
