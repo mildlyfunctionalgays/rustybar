@@ -1,3 +1,4 @@
+use crate::config::TimeConfig;
 use crate::tile::{Block, BlockSender, TileModule};
 use async_trait::async_trait;
 use chrono::prelude::*;
@@ -14,6 +15,13 @@ pub struct Time {
 impl Time {
     pub fn new() -> Time {
         Default::default()
+    }
+
+    pub fn from_config(config: &TimeConfig) -> Time {
+        Time {
+            format: config.format.clone(),
+            short_format: config.short_format.clone(),
+        }
     }
 
     fn send_time(&mut self, time: DateTime<Local>) -> Block {

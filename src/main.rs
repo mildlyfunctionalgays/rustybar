@@ -1,3 +1,4 @@
+pub mod config;
 pub mod output;
 pub mod tile;
 pub mod tiles;
@@ -8,6 +9,8 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = config::read_config().await?;
+
     // We can't do much until we have a D-Bus connection so just do it synchronously
     let (resource, _conn) = new_session_sync()?;
 
@@ -20,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (sender, receiver) = channel(1024);
 
     let mut index = 0usize;
-    let mut wrap = |module| {
+    let wrap = |module| {
         let tile = tile::Tile::new(
             index,
             sender.clone(),
@@ -30,17 +33,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         index += 1;
         tile
     };
-    let tiles = vec![
-        wrap(Box::new(tiles::Load::new())),
-        wrap(Box::new(tiles::Memory::new())),
-        wrap(Box::new(tiles::Hostname::new())),
-        wrap(Box::new(tiles::Time::new())),
-    ];
+
+    let tiles: Vec<tile::Tile> = config
+        .tile
+        .iter()
+        .map(config::process_tile)
+        .map(wrap)
+        .collect();
 
     let num_tiles = tiles.len();
     for tile in tiles.into_iter() {
         tile.spawn();
     }
 
-    match output::launch(num_tiles, receiver).await? {}
+    match output::launch(num_tiles, receiver, config.default).await? {}
 }

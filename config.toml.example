@@ -1,0 +1,12 @@
+[[tile]]
+type = "load"
+
+[[tile]]
+type = "memory"
+
+[[tile]]
+type = "hostname"
+
+[[tile]]
+type = "time"
+format = "%Y-%m-%dT%H:%M:%S"

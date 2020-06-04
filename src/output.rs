@@ -1,9 +1,14 @@
+use crate::config::DefaultSection;
 use crate::tile::TileData;
 use std::convert::Infallible;
 use tokio::io::{self, AsyncWriteExt};
 use tokio::sync::mpsc::Receiver;
 
-pub async fn launch(num_tiles: usize, mut receiver: Receiver<TileData>) -> io::Result<Infallible> {
+pub async fn launch(
+    num_tiles: usize,
+    mut receiver: Receiver<TileData>,
+    _default: DefaultSection,
+) -> io::Result<Infallible> {
     let mut stdout = io::stdout();
     stdout.write_all(b"{ \"version\": 1 }\n[").await?;
 
