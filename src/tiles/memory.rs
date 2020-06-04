@@ -1,5 +1,6 @@
 use crate::tile::{Block, BlockSender, TileModule};
 use async_trait::async_trait;
+use futures::{Stream, StreamExt};
 use std::io;
 use std::str;
 use std::time::Duration;
@@ -92,4 +93,43 @@ impl TileModule for Memory {
             sender.send(block).await?;
         }
     }
+}
+
+#[allow(unused)]
+fn memory_stream<T>(
+    clock: T,
+) -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>>
+where
+    T: Stream,
+{
+    clock.then(|_| async {
+        let mut raw = [0u8; 256];
+        File::open("/proc/meminfo")
+            .await?
+            .read_exact(&mut raw)
+            .await?;
+        let string_data = str::from_utf8(&raw)?;
+        let mut lines = string_data.split('\n');
+        let mem_total = Memory::prettify_kib(Memory::extract_value(
+            lines
+                .next()
+                .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))?,
+        )?);
+        lines.next();
+        let mem_avail = Memory::prettify_kib(Memory::extract_value(
+            lines
+                .next()
+                .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidData))?,
+        )?);
+
+        let full_text = format!("{} avail / {}", mem_avail, mem_total).into_boxed_str();
+        let short_text = format!("{} / {}", mem_avail, mem_total).into_boxed_str();
+
+        Ok(Block {
+            full_text,
+            short_text: Some(short_text),
+            name: "memory".into(),
+            ..Default::default()
+        })
+    })
 }

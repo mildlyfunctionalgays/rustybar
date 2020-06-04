@@ -1,9 +1,11 @@
 use async_trait::async_trait;
+use futures::channel::mpsc::{SendError, Sender};
+use futures::SinkExt;
 use serde::{ser::Serializer, Serialize};
 use smart_default::SmartDefault;
 use std::fmt::Debug;
 use std::sync::Arc;
-use tokio::sync::mpsc::{error::SendError, Sender};
+//use tokio::sync::mpsc::{error::SendError, Sender};
 use tokio::task::JoinHandle;
 
 #[derive(Copy, Clone, Debug, Serialize)]
@@ -65,7 +67,7 @@ pub struct Block {
     pub align: Option<Alignment>,
     pub name: Box<str>,
     #[serde(serialize_with = "arc_default")]
-    #[default = r#""".into()"#]
+    #[default = ""]
     pub instance: Arc<str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub urgent: Option<bool>,
@@ -99,7 +101,7 @@ pub struct BlockSender {
 }
 
 impl BlockSender {
-    pub async fn send(&mut self, mut block: Block) -> Result<(), SendError<TileData>> {
+    pub async fn send(&mut self, mut block: Block) -> Result<(), SendError> {
         block.instance = self.instance.clone();
         let data = TileData {
             block,

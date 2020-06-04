@@ -1,8 +1,9 @@
 use crate::config::DefaultSection;
 use crate::tile::TileData;
+use futures::channel::mpsc::Receiver;
+use futures::StreamExt;
 use std::convert::Infallible;
 use tokio::io::{self, AsyncWriteExt};
-use tokio::sync::mpsc::Receiver;
 
 pub async fn launch(
     num_tiles: usize,
@@ -15,7 +16,7 @@ pub async fn launch(
     let mut blocks = Vec::new();
     blocks.resize_with(num_tiles, Default::default);
     loop {
-        let message = receiver.recv().await.unwrap();
+        let message = receiver.next().await.unwrap();
         if message.sender_id < num_tiles {
             blocks[message.sender_id] = Some(message.block);
         } else {
