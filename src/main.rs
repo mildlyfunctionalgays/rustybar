@@ -1,3 +1,4 @@
+mod async_iter;
 mod config;
 mod output;
 mod tile;

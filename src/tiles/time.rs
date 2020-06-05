@@ -49,7 +49,7 @@ impl Stream for TimeStream {
     type Item = Result<Block, Box<dyn Error + Send + Sync>>;
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let project = Pin::as_mut(&mut self).project();
-        ready!(Future::poll(project.delay, cx));
+        let () = ready!(Future::poll(project.delay, cx));
 
         let now = Local::now();
         Pin::as_mut(&mut self)
