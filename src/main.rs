@@ -1,11 +1,11 @@
-pub mod config;
-pub mod output;
-pub mod tile;
-pub mod tiles;
+mod config;
+mod output;
+mod tile;
+mod tiles;
 
 use dbus_tokio::connection::new_session_sync;
 use futures::channel::mpsc::{channel, Sender};
-use futures::{Stream, StreamExt};
+use futures::{stream::BoxStream, StreamExt};
 use std::fmt::Debug;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -25,33 +25,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (sender, receiver) = channel(1024);
 
-    let mut index = 0usize;
-    let wrap = |module| {
-        let tile = tile::Tile::new(
-            index,
-            sender.clone(),
-            Uuid::new_v4().to_string().into(),
-            module,
-        );
-        index += 1;
-        tile
-    };
-
-    let tiles: Vec<tile::Tile> = config
+    let tiles: Vec<_> = config
         .tile
         .iter()
         .map(config::process_tile)
-        .map(wrap)
+        .enumerate()
+        .map(|(index, stream)| spawn_stream(index, stream, sender.clone()))
         .collect();
 
     let num_tiles = tiles.len();
-    for tile in tiles.into_iter() {
-        tile.spawn();
-    }
-    // let format = "%Y-%m-%d %H:%M:%S".into();
-    // let short_format = "%H:%M:%S".into();
-    // let stream = tiles::time::time_stream(format, short_format);
-    // spawn_stream(4, stream, sender.clone());
 
     drop(sender);
 
@@ -59,9 +41,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[allow(unused)]
-fn spawn_stream<S, E>(index: usize, stream: S, sender: Sender<tile::TileData>)
-where
-    S: Stream<Item = Result<tile::Block, E>> + Send + 'static,
+fn spawn_stream<E: 'static>(
+    index: usize,
+    stream: BoxStream<'static, Result<tile::Block, E>>,
+    sender: Sender<tile::TileData>,
+) where
     E: Debug,
 {
     tokio::spawn(async move {

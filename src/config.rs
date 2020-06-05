@@ -1,5 +1,6 @@
-use crate::tile::TileModule;
+use crate::tile::Block;
 use crate::tiles;
+use futures::stream::BoxStream;
 use serde::Deserialize;
 use smart_default::SmartDefault;
 use std::env::var;
@@ -8,6 +9,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::prelude::*;
+use tokio::time;
 
 #[derive(Deserialize, Clone, Debug, Default)]
 #[serde(default)]
@@ -82,11 +84,14 @@ pub async fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
     Ok(toml::from_slice(&config_contents)?)
 }
 
-pub fn process_tile(tile: &TileConfig) -> Box<dyn TileModule> {
+pub fn process_tile(
+    tile: &TileConfig,
+) -> BoxStream<'static, Result<Block, Box<dyn std::error::Error + Send + Sync>>> {
+    let five_secs = time::Duration::from_secs(5);
     match tile {
-        TileConfig::Load => Box::new(tiles::Hostname::new()),
-        TileConfig::Memory => Box::new(tiles::Memory::new()),
-        TileConfig::Hostname => Box::new(tiles::Hostname::new()),
-        TileConfig::Time(c) => Box::new(tiles::Time::from_config(c)),
+        TileConfig::Load => Box::pin(tiles::load_stream(time::interval(five_secs))),
+        TileConfig::Memory => Box::pin(tiles::memory_stream(time::interval(five_secs))),
+        TileConfig::Hostname => Box::pin(tiles::hostname_stream()),
+        TileConfig::Time(c) => Box::pin(tiles::time_stream(c.clone())),
     }
 }
