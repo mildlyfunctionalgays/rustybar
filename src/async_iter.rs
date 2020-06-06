@@ -1,24 +1,19 @@
 use async_trait::async_trait;
-use futures::stream::BoxStream;
-use futures::{stream };
+use futures::stream::{self, BoxStream};
 
 #[async_trait]
-trait AsyncIter {
-    type Item: Sized;
+pub trait AsyncIter {
+    type Item;
     async fn next(&mut self) -> Option<Self::Item>;
 
-    fn into_stream(self) -> BoxStream<'static, Self::Item>
+    fn into_stream<'a>(self) -> BoxStream<'a, Self::Item>
     where
-        Self: Sized + Send + 'static,
+        Self: Sized + Send + 'a,
     {
-        async fn helper<I>(mut iter: I) -> Option<(I::Item, I)>
-        where
-            I: AsyncIter,
-        {
+        Box::pin(stream::unfold(self, |mut iter| async {
             let value = iter.next().await?;
             Some((value, iter))
-        }
-        Box::pin(stream::unfold(self, helper))
+        }))
     }
 }
 
@@ -26,8 +21,7 @@ trait AsyncIter {
 #[cfg(test)]
 mod test {
     use super::*;
-    use futures::StreamExt;
-    use futures::executor;
+    use futures::{executor, StreamExt};
 
     struct Numbers(usize);
     impl Numbers {
