@@ -1,15 +1,16 @@
 use crate::tile::Block;
 use crate::tiles;
-use futures::stream::BoxStream;
-use serde::Deserialize;
+use futures::{stream::BoxStream, Stream};
+use serde::{Deserialize, Deserializer};
 use smart_default::SmartDefault;
 use std::env::var;
+use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::prelude::*;
-use tokio::time;
+use tokio::time::{self, Duration};
 
 #[derive(Deserialize, Clone, Debug, Default)]
 #[serde(default)]
@@ -23,9 +24,34 @@ pub struct DefaultSection {
     pub spacing: Option<u32>,
 }
 
+fn deserialize_duration<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    let number = s.trim_end_matches(char::is_alphabetic);
+    let suffix = s.trim_start_matches(number);
+    let number: f64 = number.parse().expect("Not a valid f64");
+    let duration = match suffix {
+        "s" | "" => Duration::from_secs_f64(number),
+        "m" => Duration::from_secs_f64(number * 60f64),
+        "ms" => Duration::from_secs_f64(number / 1000f64),
+        _ => unimplemented!(),
+    };
+    Ok(Some(duration))
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct TileConfig {
+    #[serde(flatten)]
+    config_type: TileConfigType,
+    #[serde(deserialize_with = "deserialize_duration", default)]
+    update: Option<Duration>,
+}
+
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub enum TileConfig {
+pub enum TileConfigType {
     Memory,
     Load,
     Hostname,
@@ -87,11 +113,24 @@ pub async fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
 pub fn process_tile(
     tile: &TileConfig,
 ) -> BoxStream<'static, Result<Block, Box<dyn std::error::Error + Send + Sync>>> {
-    let five_secs = time::Duration::from_secs(5);
-    match tile {
-        TileConfig::Load => Box::pin(time::throttle(five_secs, tiles::load_stream())),
-        TileConfig::Memory => Box::pin(time::throttle(five_secs, tiles::memory_stream())),
-        TileConfig::Hostname => Box::pin(tiles::hostname_stream()),
-        TileConfig::Time(c) => Box::pin(tiles::time_stream(c.clone())),
+    let five_secs = Duration::from_secs(5);
+    match &tile.config_type {
+        TileConfigType::Hostname => wrap(tiles::hostname_stream(), tile.update),
+        TileConfigType::Load => wrap(tiles::load_stream(), tile.update.or(Some(five_secs))),
+        TileConfigType::Memory => wrap(tiles::memory_stream(), tile.update.or(Some(five_secs))),
+        TileConfigType::Time(c) => wrap(tiles::time_stream(c.clone()), tile.update),
+    }
+}
+
+fn wrap<'a, S>(
+    stream: S,
+    duration: Option<Duration>,
+) -> BoxStream<'a, Result<Block, Box<dyn Error + Send + Sync>>>
+where
+    S: Stream<Item = Result<Block, Box<dyn Error + Send + Sync>>> + Send + 'a,
+{
+    match duration {
+        Some(duration) => Box::pin(time::throttle(duration, stream)),
+        None => Box::pin(stream),
     }
 }
