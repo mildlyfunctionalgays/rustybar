@@ -89,8 +89,8 @@ pub fn process_tile(
 ) -> BoxStream<'static, Result<Block, Box<dyn std::error::Error + Send + Sync>>> {
     let five_secs = time::Duration::from_secs(5);
     match tile {
-        TileConfig::Load => Box::pin(tiles::load_stream(time::interval(five_secs))),
-        TileConfig::Memory => Box::pin(tiles::memory_stream(time::interval(five_secs))),
+        TileConfig::Load => Box::pin(time::throttle(five_secs, tiles::load_stream())),
+        TileConfig::Memory => Box::pin(time::throttle(five_secs, tiles::memory_stream())),
         TileConfig::Hostname => Box::pin(tiles::hostname_stream()),
         TileConfig::Time(c) => Box::pin(tiles::time_stream(c.clone())),
     }

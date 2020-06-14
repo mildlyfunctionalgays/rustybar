@@ -1,7 +1,6 @@
 use crate::tile::Block;
-use futures::{Stream, StreamExt};
-use std::io;
-use std::str;
+use futures::{stream, Stream, StreamExt};
+use std::{io, str, u64};
 use tokio::fs::File;
 use tokio::prelude::*;
 
@@ -41,13 +40,9 @@ fn extract_value(line: &str) -> Result<u64, Box<dyn std::error::Error + Send + S
         .parse()?)
 }
 
-pub fn memory_stream<T>(
-    clock: T,
-) -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>>
-where
-    T: Stream,
+pub fn memory_stream() -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>>
 {
-    clock.then(|_| async {
+    stream::repeat(()).then(|_| async {
         let mut raw = [0u8; 256];
         File::open("/proc/meminfo")
             .await?

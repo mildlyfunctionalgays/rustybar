@@ -4,13 +4,9 @@ use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::stream::Stream;
 
-pub fn load_stream<T>(
-    clock: T,
-) -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>>
-where
-    T: Stream,
+pub fn load_stream() -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>>
 {
-    clock.then(|_| async {
+    futures::stream::repeat(()).then(|()| async {
         let mut raw = String::new();
         File::open("/proc/loadavg")
             .await?
