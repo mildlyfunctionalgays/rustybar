@@ -17,7 +17,6 @@ pub trait AsyncIter {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;

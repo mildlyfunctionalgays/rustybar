@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Artemis Tosini <me@artem.ist>"]
 edition = "2018"
 
+[features]
+check_latency = []
 
 [dependencies]
 async-trait = "0.1"

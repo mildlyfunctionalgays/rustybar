@@ -2,6 +2,8 @@ use serde::{ser::Serializer, Serialize};
 use smart_default::SmartDefault;
 use std::fmt::Debug;
 use std::sync::Arc;
+#[cfg(feature = "check_latency")]
+use std::time::Instant;
 //use tokio::sync::mpsc::{error::SendError, Sender};
 
 #[allow(unused)]
@@ -40,6 +42,16 @@ where
     serializer.serialize_str(arc)
 }
 
+#[cfg(feature = "check_latency")]
+fn time_diff<S>(&instant: &Instant, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let duration = Instant::now() - instant;
+    //let duration = duration.as_secs_f32();
+    serializer.serialize_str(&format!("{:?}", duration))
+}
+
 #[derive(Clone, Serialize, Debug, SmartDefault)]
 pub struct Block {
     pub full_text: Box<str>,
@@ -75,6 +87,10 @@ pub struct Block {
     pub separator_block_width: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub markup: Option<Markup>,
+    #[serde(serialize_with = "time_diff")]
+    #[default(Instant::now())]
+    #[cfg(feature = "check_latency")]
+    pub latency: Instant,
 }
 
 #[derive(Clone, Debug)]
