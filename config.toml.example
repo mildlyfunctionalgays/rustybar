@@ -8,5 +8,8 @@ type = "memory"
 type = "hostname"
 
 [[tile]]
+type = "battery"
+
+[[tile]]
 type = "time"
 format = "%Y-%m-%dT%H:%M:%S"
