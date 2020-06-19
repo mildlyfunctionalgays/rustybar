@@ -4,7 +4,7 @@ mod output;
 mod tile;
 mod tiles;
 
-use dbus_tokio::connection::new_session_sync;
+use dbus_tokio::connection::new_system_sync;
 use futures::channel::mpsc::{channel, Sender};
 use futures::{stream::BoxStream, StreamExt};
 use std::fmt::Debug;
@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = config::read_config().await?;
 
     // We can't do much until we have a D-Bus connection so just do it synchronously
-    let (resource, _conn) = new_session_sync()?;
+    let (resource, conn) = new_system_sync()?;
 
     // Now start listening on our D-Bus connection
     tokio::spawn(async {
@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let tiles: Vec<_> = config
         .tile
         .iter()
-        .map(config::process_tile)
+        .map(|tile| config::process_tile(tile, &conn))
         .enumerate()
         .map(|(index, stream)| spawn_stream(index, stream, sender.clone()))
         .collect();

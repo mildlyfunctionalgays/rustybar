@@ -1,5 +1,6 @@
 use crate::tile::Block;
 use crate::tiles;
+use dbus::nonblock::SyncConnection;
 use futures::{stream::BoxStream, Stream};
 use serde::{Deserialize, Deserializer};
 use smart_default::SmartDefault;
@@ -7,6 +8,7 @@ use std::env::var;
 use std::error::Error;
 use std::io;
 use std::path::PathBuf;
+use std::sync::Arc;
 use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::prelude::*;
@@ -113,11 +115,12 @@ pub async fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
 
 pub fn process_tile(
     tile: &TileConfig,
+    connection: &Arc<SyncConnection>,
 ) -> BoxStream<'static, Result<Block, Box<dyn std::error::Error + Send + Sync>>> {
     let five_secs = Duration::from_secs(5);
     match &tile.config_type {
         TileConfigType::Battery => wrap(tiles::battery_stream(), tile.update.or(Some(five_secs))),
-        TileConfigType::Hostname => wrap(tiles::hostname_stream(), tile.update),
+        TileConfigType::Hostname => wrap(tiles::hostname_stream(connection.clone()), tile.update),
         TileConfigType::Load => wrap(tiles::load_stream(), tile.update.or(Some(five_secs))),
         TileConfigType::Memory => wrap(tiles::memory_stream(), tile.update.or(Some(five_secs))),
         TileConfigType::Time(c) => wrap(tiles::time_stream(c.clone()), tile.update),

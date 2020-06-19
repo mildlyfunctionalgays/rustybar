@@ -1,22 +1,28 @@
 use crate::tile::Block;
-use futures::stream;
-use futures::Stream;
-use tokio::fs::File;
-use tokio::prelude::*;
+use dbus::nonblock::stdintf::org_freedesktop_dbus::Properties;
+use dbus::nonblock::{Proxy, SyncConnection};
+use futures::{FutureExt, Stream};
+use std::sync::Arc;
+use std::time::Duration;
 
 pub fn hostname_stream(
+    connection: Arc<SyncConnection>,
 ) -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>> {
-    stream::once(async {
-        let mut raw = String::new();
-        File::open("/proc/sys/kernel/hostname")
-            .await?
-            .read_to_string(&mut raw)
-            .await?;
+    let proxy = Proxy::new(
+        "org.freedesktop.hostname1",
+        "/org/freedesktop/hostname1",
+        Duration::from_secs(5),
+        connection,
+    );
+    let reply = proxy.get("org.freedesktop.hostname1", "Hostname");
+    async {
+        let hostname: String = reply.await?;
         let block = Block {
-            full_text: raw.trim_end_matches('\n').into(),
+            full_text: hostname.into(),
             name: "hostname".into(),
             ..Default::default()
         };
         Ok(block)
-    })
+    }
+    .into_stream()
 }
