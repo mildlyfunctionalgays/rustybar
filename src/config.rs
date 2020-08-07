@@ -1,11 +1,9 @@
-use crate::tile::Block;
 use crate::tiles;
 use dbus::nonblock::SyncConnection;
 use futures::{stream::BoxStream, Stream};
 use serde::{Deserialize, Deserializer};
 use smart_default::SmartDefault;
 use std::env::var;
-use std::error::Error;
 use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
