@@ -27,8 +27,8 @@ where
             eprintln!("Invalid message with sender id {}", message.sender_id);
             continue;
         }
-        let serialized = serde_json::to_vec(&blocks).unwrap();
+        let mut serialized = serde_json::to_vec(&blocks).unwrap();
+        serialized.extend_from_slice(b",\n");
         stdout.write_all(&serialized).await?;
-        stdout.write_all(b",\n").await?;
     }
 }
