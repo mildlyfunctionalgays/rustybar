@@ -1,11 +1,11 @@
+use super::TileResult;
 use crate::tile::Block;
 use futures::stream::StreamExt;
 use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::stream::Stream;
 
-pub fn load_stream() -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>>
-{
+pub fn load_stream() -> impl Stream<Item = TileResult> {
     futures::stream::repeat(()).then(|()| async {
         let mut raw = String::new();
         File::open("/proc/loadavg")

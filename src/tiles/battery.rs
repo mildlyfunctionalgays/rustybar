@@ -1,3 +1,4 @@
+use super::TileResult;
 use crate::tile::Block;
 use futures::{future::try_join3, stream, Stream};
 use futures_util::StreamExt;
@@ -5,7 +6,7 @@ use std::error::Error;
 use tokio::fs::File;
 use tokio::prelude::*;
 
-pub fn battery_stream() -> impl Stream<Item = Result<Block, Box<dyn Error + Send + Sync>>> {
+pub fn battery_stream() -> impl Stream<Item = TileResult> {
     stream::repeat(()).then(|()| async {
         let charge_now = async {
             let mut raw = String::new();

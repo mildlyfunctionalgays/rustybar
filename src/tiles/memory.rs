@@ -1,3 +1,4 @@
+use super::TileResult;
 use crate::tile::Block;
 use futures::{stream, Stream, StreamExt};
 use std::{io, str, u64};
@@ -40,8 +41,7 @@ fn extract_value(line: &str) -> Result<u64, Box<dyn std::error::Error + Send + S
         .parse()?)
 }
 
-pub fn memory_stream() -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>>
-{
+pub fn memory_stream() -> impl Stream<Item = TileResult> {
     stream::repeat(()).then(|_| async {
         let mut raw = [0u8; 256];
         File::open("/proc/meminfo")

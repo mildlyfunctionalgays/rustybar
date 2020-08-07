@@ -13,6 +13,7 @@ use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::time::{self, Duration};
+use crate::tiles::TileResult;
 
 #[derive(Deserialize, Clone, Debug, Default)]
 #[serde(default)]
@@ -116,7 +117,7 @@ pub async fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
 pub fn process_tile(
     tile: &TileConfig,
     connection: &Arc<SyncConnection>,
-) -> BoxStream<'static, Result<Block, Box<dyn std::error::Error + Send + Sync>>> {
+) -> BoxStream<'static, TileResult> {
     let five_secs = Duration::from_secs(5);
     match &tile.config_type {
         TileConfigType::Battery => wrap(tiles::battery_stream(), tile.update.or(Some(five_secs))),
@@ -130,9 +131,9 @@ pub fn process_tile(
 fn wrap<'a, S>(
     stream: S,
     duration: Option<Duration>,
-) -> BoxStream<'a, Result<Block, Box<dyn Error + Send + Sync>>>
+) -> BoxStream<'a, TileResult>
 where
-    S: Stream<Item = Result<Block, Box<dyn Error + Send + Sync>>> + Send + 'a,
+    S: Stream<Item = TileResult> + Send + 'a,
 {
     match duration {
         Some(duration) => Box::pin(time::throttle(duration, stream)),

@@ -1,3 +1,4 @@
+use super::TileResult;
 use crate::config::TimeConfig;
 use crate::tile::Block;
 use chrono::prelude::*;
@@ -6,14 +7,11 @@ use futures::future::Future;
 use futures::stream::Stream;
 use futures_util::ready;
 use pin_project::pin_project;
-use std::error::Error;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::time::{delay_for, delay_until, Delay, Instant};
 
-pub fn time_stream(
-    config: TimeConfig,
-) -> impl Stream<Item = Result<Block, Box<dyn std::error::Error + Send + Sync>>> {
+pub fn time_stream(config: TimeConfig) -> impl Stream<Item = TileResult> {
     TimeStream {
         config,
         delay: delay_until(Instant::now()),
@@ -46,7 +44,7 @@ impl TimeStream {
 }
 
 impl Stream for TimeStream {
-    type Item = Result<Block, Box<dyn Error + Send + Sync>>;
+    type Item = TileResult;
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let project = Pin::as_mut(&mut self).project();
         ready!(Future::poll(project.delay, cx));
