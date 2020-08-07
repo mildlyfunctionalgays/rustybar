@@ -45,20 +45,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn spawn_stream<E: 'static>(
     index: usize,
     stream: BoxStream<'static, Result<tile::Block, E>>,
-    sender: Sender<tile::TileData>,
+    sender: Sender<Result<tile::TileData, E>>,
 ) where
-    E: Debug,
+    E: Debug + Send,
 {
     tokio::spawn(async move {
         let instance: Arc<str> = Uuid::new_v4().to_string().into();
-        let stream = stream.map(|block| {
-            Ok(tile::TileData {
+        let stream = stream.map(|block: Result<_, _>| {
+            Ok(block.map(|block| tile::TileData {
                 block: tile::Block {
                     instance: instance.clone(),
-                    ..block.unwrap()
+                    ..block
                 },
                 sender_id: index,
-            })
+            }))
         });
         let future = stream.forward(sender);
         future.await

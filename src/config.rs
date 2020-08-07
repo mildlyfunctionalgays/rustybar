@@ -1,4 +1,5 @@
 use crate::tiles;
+use crate::tiles::TileResult;
 use dbus::nonblock::SyncConnection;
 use futures::{stream::BoxStream, Stream};
 use serde::{Deserialize, Deserializer};
@@ -11,7 +12,6 @@ use structopt::StructOpt;
 use tokio::fs::File;
 use tokio::prelude::*;
 use tokio::time::{self, Duration};
-use crate::tiles::TileResult;
 
 #[derive(Deserialize, Clone, Debug, Default)]
 #[serde(default)]
@@ -119,17 +119,14 @@ pub fn process_tile(
     let five_secs = Duration::from_secs(5);
     match &tile.config_type {
         TileConfigType::Battery => wrap(tiles::battery_stream(), tile.update.or(Some(five_secs))),
-        TileConfigType::Hostname => wrap(tiles::hostname_stream(connection.clone()), tile.update),
+        TileConfigType::Hostname => wrap(tiles::hostname_stream(connection.as_ref()), tile.update),
         TileConfigType::Load => wrap(tiles::load_stream(), tile.update.or(Some(five_secs))),
         TileConfigType::Memory => wrap(tiles::memory_stream(), tile.update.or(Some(five_secs))),
         TileConfigType::Time(c) => wrap(tiles::time_stream(c.clone()), tile.update),
     }
 }
 
-fn wrap<'a, S>(
-    stream: S,
-    duration: Option<Duration>,
-) -> BoxStream<'a, TileResult>
+fn wrap<'a, S>(stream: S, duration: Option<Duration>) -> BoxStream<'a, TileResult>
 where
     S: Stream<Item = TileResult> + Send + 'a,
 {
