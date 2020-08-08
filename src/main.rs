@@ -1,6 +1,7 @@
 #![feature(generators)]
 #![feature(stmt_expr_attributes)]
 #![feature(proc_macro_hygiene)]
+#![feature(never_type)]
 
 mod async_iter;
 mod config;
@@ -16,7 +17,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<!, Box<dyn std::error::Error>> {
     let config = config::read_config().await?;
 
     // We can't do much until we have a D-Bus connection so just do it synchronously
@@ -42,10 +43,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     drop(sender);
 
-    match output::launch(num_tiles, receiver, config.default).await? {}
+    output::launch(num_tiles, receiver, config.default).await?
 }
 
-#[allow(unused)]
 fn spawn_stream<E: 'static>(
     index: usize,
     stream: BoxStream<'static, Result<tile::Block, E>>,

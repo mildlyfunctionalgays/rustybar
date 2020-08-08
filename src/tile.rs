@@ -4,7 +4,6 @@ use std::fmt::Debug;
 use std::sync::Arc;
 #[cfg(feature = "check_latency")]
 use std::time::Instant;
-//use tokio::sync::mpsc::{error::SendError, Sender};
 
 #[allow(unused)]
 #[derive(Copy, Clone, Debug, Serialize)]

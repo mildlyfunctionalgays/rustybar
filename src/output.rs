@@ -2,14 +2,13 @@ use crate::config::DefaultSection;
 use crate::tile::TileData;
 use futures::channel::mpsc::Receiver;
 use futures::StreamExt;
-use std::convert::Infallible;
 use tokio::io::{self, AsyncWriteExt};
 
 pub async fn launch<E>(
     num_tiles: usize,
     mut receiver: Receiver<Result<TileData, E>>,
     _default: DefaultSection,
-) -> io::Result<Infallible>
+) -> io::Result<!>
 where
     E: Send + std::fmt::Debug,
 {
