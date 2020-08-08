@@ -112,9 +112,9 @@ pub async fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
     Ok(toml::from_slice(&config_contents)?)
 }
 
-pub fn process_tile(
+pub fn process_tile<'a>(
     tile: &TileConfig,
-    connection: &Arc<SyncConnection>,
+    connection: &'a Arc<SyncConnection>,
 ) -> BoxStream<'static, TileResult> {
     let five_secs = Duration::from_secs(5);
     match &tile.config_type {

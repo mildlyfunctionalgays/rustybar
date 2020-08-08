@@ -1,6 +1,6 @@
-use super::TileResult;
 use crate::tile::Block;
-use futures::{stream, Stream, StreamExt};
+use futures_async_stream::try_stream;
+use std::error::Error;
 use std::{io, str, u64};
 use tokio::fs::File;
 use tokio::prelude::*;
@@ -41,13 +41,12 @@ fn extract_value(line: &str) -> Result<u64, Box<dyn std::error::Error + Send + S
         .parse()?)
 }
 
-pub fn memory_stream() -> impl Stream<Item = TileResult> {
-    stream::repeat(()).then(|_| async {
+#[try_stream(ok = Block, error = Box<dyn Error + Send + Sync>)]
+pub async fn memory_stream() {
+    loop {
         let mut raw = [0u8; 256];
-        File::open("/proc/meminfo")
-            .await?
-            .read_exact(&mut raw)
-            .await?;
+        let mut file = File::open("/proc/meminfo").await?;
+        file.read_exact(&mut raw).await?;
         let string_data = str::from_utf8(&raw)?;
         let mut lines = string_data.split('\n');
         let mem_total = prettify_kib(extract_value(
@@ -65,11 +64,11 @@ pub fn memory_stream() -> impl Stream<Item = TileResult> {
         let full_text = format!("{} avail / {}", mem_avail, mem_total).into_boxed_str();
         let short_text = format!("{} / {}", mem_avail, mem_total).into_boxed_str();
 
-        Ok(Block {
+        yield Block {
             full_text,
             short_text: Some(short_text),
             name: "memory".into(),
             ..Default::default()
-        })
-    })
+        };
+    }
 }

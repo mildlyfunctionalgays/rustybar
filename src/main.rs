@@ -1,3 +1,7 @@
+#![feature(generators)]
+#![feature(stmt_expr_attributes)]
+#![feature(proc_macro_hygiene)]
+
 mod async_iter;
 mod config;
 mod output;

@@ -1,13 +1,13 @@
-use super::TileResult;
 use crate::tile::Block;
-use futures::{future::try_join3, stream, Stream};
-use futures_util::StreamExt;
+use futures::future::try_join3;
+use futures_async_stream::try_stream;
 use std::error::Error;
 use tokio::fs::File;
 use tokio::prelude::*;
 
-pub fn battery_stream() -> impl Stream<Item = TileResult> {
-    stream::repeat(()).then(|()| async {
+#[try_stream(ok = Block, error = Box<dyn Error + Send + Sync>)]
+pub async fn battery_stream() {
+    loop {
         let charge_now = async {
             let mut raw = String::new();
             File::open("/sys/class/power_supply/BAT0/charge_now")
@@ -38,11 +38,11 @@ pub fn battery_stream() -> impl Stream<Item = TileResult> {
         let (charge_now, charge_total, status) =
             try_join3(charge_now, charge_total, status).await?;
         let percentage = charge_now * 100 / charge_total;
-        Ok(Block {
+        yield Block {
             full_text: format!("{}% {}", percentage, status).into(),
             short_text: format!("{}%", percentage).into_boxed_str().into(),
             name: "battery".into(),
             ..Default::default()
-        })
-    })
+        };
+    }
 }
