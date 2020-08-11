@@ -6,30 +6,16 @@ use tokio::fs::File;
 use tokio::prelude::*;
 
 fn prettify_kib(kib: u64) -> Box<str> {
-    if kib > u64::MAX / 1024 {
-        panic!("Too much memory");
-    }
-    let mut mem = kib;
-    let mut stages = 0u8;
-    while mem >= 1024 {
-        stages += 1;
-        mem /= 1024;
-    }
-    format!(
-        "{} {}iB",
-        mem,
-        match stages {
-            0 => 'k',
-            1 => 'M',
-            2 => 'G',
-            3 => 'T',
-            4 => 'P',
-            5 => 'E',
-            6 => 'Z',
-            _ => panic!("Too much memory, for real this time"),
-        }
-    )
-    .into_boxed_str()
+    let (mem, unit) = match kib {
+        0..=0x3ff => (kib, 'k'),
+        0x400..=0xfffff => (kib >> 10, 'M'),
+        0x100000..=0x3fffffff => (kib >> 20, 'G'),
+        0x40000000..=0xffffffffff => (kib >> 30, 'T'),
+        0x10000000000..=0x3ffffffffffff => (kib >> 40, 'P'),
+        0x4000000000000..=0xfffffffffffffff => (kib >> 50, 'E'),
+        0x1000000000000000..=0xffffffffffffffff => (kib >> 60, 'Z'),
+    };
+    format!("{} {}iB", mem, unit).into_boxed_str()
 }
 
 fn extract_value(line: &str) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {

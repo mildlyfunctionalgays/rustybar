@@ -3,6 +3,6 @@
 with pkgs; stdenv.mkDerivation {
   name = "rustybar-env";
   nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ dbus ];
+  buildInputs = [ dbus rustup ];
 }
 
