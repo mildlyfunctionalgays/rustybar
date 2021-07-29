@@ -10,8 +10,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use structopt::StructOpt;
 use tokio::fs::File;
-use tokio::prelude::*;
-use tokio::time::{self, Duration};
+use tokio::io::AsyncReadExt;
+use tokio::time::Duration;
+use tokio_stream::StreamExt;
 
 #[derive(Deserialize, Clone, Debug, Default)]
 #[serde(default)]
@@ -58,6 +59,14 @@ pub enum TileConfigType {
     Load,
     Hostname,
     Time(TimeConfig),
+    Iwd(IwdConfig),
+}
+
+#[derive(SmartDefault, Deserialize, Clone, Debug)]
+#[serde(default)]
+pub struct IwdConfig {
+    #[default("wlan0")]
+    pub interface: Box<str>,
 }
 
 #[derive(SmartDefault, Deserialize, Clone, Debug)]
@@ -123,6 +132,10 @@ pub fn process_tile<'a>(
         TileConfigType::Load => wrap(tiles::load_stream(), tile.update.or(Some(five_secs))),
         TileConfigType::Memory => wrap(tiles::memory_stream(), tile.update.or(Some(five_secs))),
         TileConfigType::Time(c) => wrap(tiles::time_stream(c.clone()), tile.update),
+        TileConfigType::Iwd(c) => wrap(
+            tiles::iwd_stream(connection.clone(), c.clone()),
+            tile.update.or(Some(five_secs)),
+        ),
     }
 }
 
@@ -131,7 +144,7 @@ where
     S: Stream<Item = TileResult> + Send + 'a,
 {
     match duration {
-        Some(duration) => Box::pin(time::throttle(duration, stream)),
+        Some(duration) => Box::pin(stream.throttle(duration)),
         None => Box::pin(stream),
     }
 }

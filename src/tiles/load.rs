@@ -2,7 +2,7 @@ use crate::tile::Block;
 use futures_async_stream::try_stream;
 use std::error::Error;
 use tokio::fs::File;
-use tokio::prelude::*;
+use tokio::io::AsyncReadExt;
 
 #[try_stream(ok = Block, error = Box<dyn Error + Send + Sync>)]
 pub async fn load_stream() {

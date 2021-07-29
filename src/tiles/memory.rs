@@ -3,7 +3,7 @@ use futures_async_stream::try_stream;
 use std::error::Error;
 use std::{io, str, u64};
 use tokio::fs::File;
-use tokio::prelude::*;
+use tokio::io::AsyncReadExt;
 
 fn prettify_kib(kib: u64) -> Box<str> {
     let (mem, unit) = match kib {

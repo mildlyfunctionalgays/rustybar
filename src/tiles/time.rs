@@ -3,7 +3,7 @@ use crate::config::TimeConfig;
 use crate::tile::Block;
 use chrono::prelude::*;
 use futures_async_stream::stream;
-use tokio::time::delay_for;
+use tokio::time::sleep;
 
 #[stream(item = TileResult)]
 pub async fn time_stream(config: TimeConfig) {
@@ -19,6 +19,6 @@ pub async fn time_stream(config: TimeConfig) {
         let next = now.trunc_subsecs(0) + chrono::Duration::seconds(1);
         let difference = next - now;
 
-        delay_for(difference.to_std().unwrap()).await;
+        sleep(difference.to_std().unwrap()).await;
     }
 }
