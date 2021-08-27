@@ -7,6 +7,7 @@ rustPlatform.buildRustPackage rec {
   src = ./.;
   cargoLock.lockFile = ./Cargo.lock;
   RUSTC_BOOTSTRAP = 1;
+  doCheck = false;
   nativeBuildInputs = [ pkgconfig ];
   buildInputs = [ dbus ];
 
