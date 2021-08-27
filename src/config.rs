@@ -54,12 +54,19 @@ pub struct TileConfig {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum TileConfigType {
-    Battery,
+    Battery(BatteryConfig),
     Memory,
     Load,
     Hostname,
     Time(TimeConfig),
     Iwd(IwdConfig),
+}
+
+#[derive(SmartDefault, Deserialize, Clone, Debug)]
+#[serde(default)]
+pub struct BatteryConfig {
+    #[default("BAT0")]
+    pub battery: Box<str>,
 }
 
 #[derive(SmartDefault, Deserialize, Clone, Debug)]
@@ -127,7 +134,10 @@ pub fn process_tile<'a>(
 ) -> BoxStream<'static, TileResult> {
     let five_secs = Duration::from_secs(5);
     match &tile.config_type {
-        TileConfigType::Battery => wrap(tiles::battery_stream(), tile.update.or(Some(five_secs))),
+        TileConfigType::Battery(c) => wrap(
+            tiles::battery_stream(c.clone()),
+            tile.update.or(Some(five_secs)),
+        ),
         TileConfigType::Hostname => wrap(tiles::hostname_stream(connection.as_ref()), tile.update),
         TileConfigType::Load => wrap(tiles::load_stream(), tile.update.or(Some(five_secs))),
         TileConfigType::Memory => wrap(tiles::memory_stream(), tile.update.or(Some(five_secs))),

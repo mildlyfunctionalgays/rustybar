@@ -18,16 +18,21 @@ where
     let mut blocks = Vec::new();
     blocks.resize_with(num_tiles, Default::default);
     loop {
-        let message = receiver.next().await.unwrap();
-        let message = message.unwrap();
-        if message.sender_id < num_tiles {
-            blocks[message.sender_id] = Some(message.block);
-        } else {
-            eprintln!("Invalid message with sender id {}", message.sender_id);
-            continue;
+        match receiver.next().await.unwrap() {
+            Ok(message) => {
+                if message.sender_id < num_tiles {
+                    blocks[message.sender_id] = Some(message.block);
+                } else {
+                    eprintln!("Invalid message with sender id {}", message.sender_id);
+                    continue;
+                }
+                let mut serialized = serde_json::to_vec(&blocks).unwrap();
+                serialized.extend_from_slice(b",\n");
+                stdout.write_all(&serialized).await?;
+            }
+            Err(err) => {
+                eprintln!("Error in tile: {:?}", err);
+            }
         }
-        let mut serialized = serde_json::to_vec(&blocks).unwrap();
-        serialized.extend_from_slice(b",\n");
-        stdout.write_all(&serialized).await?;
     }
 }
