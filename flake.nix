@@ -37,6 +37,10 @@
         apps.rustybar = utils.lib.mkApp { drv = packages.rustybar; };
         defaultApp = apps.rustybar;
 
+        overlay = final: prev: {
+          inherit (packages) rustybar;
+        };
+
         devShells.rustybar = with pkgs; mkShell {
           packages = [ pkgconfig dbus rustup ];
         };
