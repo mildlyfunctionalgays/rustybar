@@ -21,7 +21,7 @@
           cargoLock.lockFile = ./Cargo.lock;
           RUSTC_BOOTSTRAP = 1;
           doCheck = false;
-          nativeBuildInputs = [ pkgconfig ];
+          nativeBuildInputs = [ pkg-config ];
           buildInputs = [ dbus ];
 
           meta = with lib; {
@@ -42,7 +42,7 @@
         };
 
         devShells.rustybar = with pkgs; mkShell {
-          packages = [ pkgconfig dbus rustup ];
+          packages = [ pkg-config dbus rustup ];
         };
         devShell = devShells.rustybar;
       })) // {
