@@ -13,7 +13,7 @@ pub async fn battery_stream(config: BatteryConfig) {
     loop {
         let charge_now = async {
             let mut raw = String::new();
-            File::open(base_path.join("charge_now"))
+            File::open(base_path.join("energy_now"))
                 .await?
                 .read_to_string(&mut raw)
                 .await?;
@@ -22,7 +22,7 @@ pub async fn battery_stream(config: BatteryConfig) {
         };
         let charge_total = async {
             let mut raw = String::new();
-            File::open(base_path.join("charge_full"))
+            File::open(base_path.join("energy_full"))
                 .await?
                 .read_to_string(&mut raw)
                 .await?;
