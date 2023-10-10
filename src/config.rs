@@ -125,7 +125,7 @@ pub async fn read_config() -> Result<Config, Box<dyn std::error::Error>> {
         .await?
         .read_to_end(&mut config_contents)
         .await?;
-    Ok(toml::from_slice(&config_contents)?)
+    Ok(toml::from_str(std::str::from_utf8(&config_contents)?)?)
 }
 
 pub fn process_tile(
