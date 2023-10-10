@@ -4,16 +4,24 @@ use futures::future::try_join3;
 use futures_async_stream::try_stream;
 use std::error::Error;
 use std::path::Path;
-use tokio::fs::File;
+use tokio::fs::{try_exists, File};
 use tokio::io::AsyncReadExt;
 
 #[try_stream(ok = Block, error = Box<dyn Error + Send + Sync>)]
 pub async fn battery_stream(config: BatteryConfig) {
-    let base_path = Path::new("/sys/class/power_supply").join(&*config.battery);
+    let base_dir = Path::new("/sys/class/power_supply").join(&*config.battery);
+    let file_prefix = if try_exists(base_dir.join("energy_now")).await? {
+        "energy_"
+    } else {
+        "charge_"
+    };
+    let now_path = base_dir.join(file_prefix.to_owned() + "now");
+    let full_path = base_dir.join(file_prefix.to_owned() + "full");
+
     loop {
         let charge_now = async {
             let mut raw = String::new();
-            File::open(base_path.join("energy_now"))
+            File::open(&now_path)
                 .await?
                 .read_to_string(&mut raw)
                 .await?;
@@ -22,7 +30,7 @@ pub async fn battery_stream(config: BatteryConfig) {
         };
         let charge_total = async {
             let mut raw = String::new();
-            File::open(base_path.join("energy_full"))
+            File::open(&full_path)
                 .await?
                 .read_to_string(&mut raw)
                 .await?;
@@ -31,7 +39,7 @@ pub async fn battery_stream(config: BatteryConfig) {
         };
         let status = async {
             let mut raw = String::new();
-            File::open(base_path.join("status"))
+            File::open(base_dir.join("status"))
                 .await?
                 .read_to_string(&mut raw)
                 .await?;
